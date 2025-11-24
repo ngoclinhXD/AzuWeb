@@ -7,8 +7,10 @@ import { useGSAP } from '@gsap/react';
 gsap.registerPlugin(ScrollTrigger, GSAPSplitText, useGSAP);
 
 export interface SplitTextProps {
-  text: string;
+  text?: string;
+  children?: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   delay?: number;
   duration?: number;
   ease?: string | ((t: number) => number);
@@ -17,14 +19,17 @@ export interface SplitTextProps {
   to?: gsap.TweenVars;
   threshold?: number;
   rootMargin?: string;
-  tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
+  tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span' | 'div';
   textAlign?: React.CSSProperties['textAlign'];
   onLetterAnimationComplete?: () => void;
+  gradientRange?: { start: number; end: number; gradient: string };
 }
 
 const SplitText: React.FC<SplitTextProps> = ({
   text,
+  children,
   className = '',
+  style: customStyle,
   delay = 100,
   duration = 0.6,
   ease = 'power3.out',
@@ -33,9 +38,10 @@ const SplitText: React.FC<SplitTextProps> = ({
   to = { opacity: 1, y: 0 },
   threshold = 0.1,
   rootMargin = '-100px',
-  tag = 'p',
+  tag = 'div',
   textAlign = 'center',
-  onLetterAnimationComplete
+  onLetterAnimationComplete,
+  gradientRange
 }) => {
   const ref = useRef<HTMLParagraphElement>(null);
   const animationCompletedRef = useRef(false);
@@ -53,7 +59,7 @@ const SplitText: React.FC<SplitTextProps> = ({
 
   useGSAP(
     () => {
-      if (!ref.current || !text || !fontsLoaded) return;
+      if (!ref.current || !fontsLoaded) return;
       const el = ref.current as HTMLElement & {
         _rbsplitInstance?: GSAPSplitText;
       };
@@ -94,6 +100,19 @@ const SplitText: React.FC<SplitTextProps> = ({
         reduceWhiteSpace: false,
         onSplit: (self: GSAPSplitText) => {
           assignTargets(self);
+          
+          // Apply gradient to specific character range if specified
+          if (gradientRange && self.chars) {
+            const { start, end, gradient } = gradientRange;
+            for (let i = start; i < end && i < self.chars.length; i++) {
+              const char = self.chars[i] as HTMLElement;
+              char.style.backgroundImage = gradient;
+              char.style.backgroundClip = 'text';
+              char.style.webkitBackgroundClip = 'text';
+              char.style.color = 'transparent';
+            }
+          }
+          
           return gsap.fromTo(
             targets,
             { ...from },
@@ -133,6 +152,7 @@ const SplitText: React.FC<SplitTextProps> = ({
     {
       dependencies: [
         text,
+        children,
         delay,
         duration,
         ease,
@@ -152,52 +172,24 @@ const SplitText: React.FC<SplitTextProps> = ({
     const style: React.CSSProperties = {
       textAlign,
       wordWrap: 'break-word',
-      willChange: 'transform, opacity'
+      willChange: 'transform, opacity',
+      ...customStyle
     };
     const classes = `split-parent overflow-hidden inline-block whitespace-normal ${className}`;
+    
+    // Helper to render the specific tag
+    const content = text || children;
+    
     switch (tag) {
-      case 'h1':
-        return (
-          <h1 ref={ref} style={style} className={classes}>
-            {text}
-          </h1>
-        );
-      case 'h2':
-        return (
-          <h2 ref={ref} style={style} className={classes}>
-            {text}
-          </h2>
-        );
-      case 'h3':
-        return (
-          <h3 ref={ref} style={style} className={classes}>
-            {text}
-          </h3>
-        );
-      case 'h4':
-        return (
-          <h4 ref={ref} style={style} className={classes}>
-            {text}
-          </h4>
-        );
-      case 'h5':
-        return (
-          <h5 ref={ref} style={style} className={classes}>
-            {text}
-          </h5>
-        );
-      case 'h6':
-        return (
-          <h6 ref={ref} style={style} className={classes}>
-            {text}
-          </h6>
-        );
-      default:
-        return (
-          <p ref={ref} style={style} className={classes}>
-            {text}
-          </p>
-        );
+      case 'h1': return <h1 ref={ref} style={style} className={classes}>{content}</h1>;
+      case 'h2': return <h2 ref={ref} style={style} className={classes}>{content}</h2>;
+      case 'h3': return <h3 ref={ref} style={style} className={classes}>{content}</h3>;
+      case 'h4': return <h4 ref={ref} style={style} className={classes}>{content}</h4>;
+      case 'h5': return <h5 ref={ref} style={style} className={classes}>{content}</h5>;
+      case 'h6': return <h6 ref={ref} style={style} className={classes}>{content}</h6>;
+      case 'span': return <span ref={ref} style={style} className={classes}>{content}</span>;
+      case 'div': return <div ref={ref} style={style} className={classes}>{content}</div>;
+      default: return <p ref={ref} style={style} className={classes}>{content}</p>;
     }
   };
 
