@@ -2,6 +2,10 @@
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/8cec5e61-f54f-4016-97d1-855b93359675" alt="CinoTech Logo" width="666" height="375" />
+  <br />
+  <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">
+    <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg" alt="License: CC BY-NC-SA 4.0">
+  </a>
 
   <p>
     The official code repository for CinoTech's website.
@@ -65,4 +69,4 @@ If you encounter any issues or have questions, please [open an issue](https://gi
 
 ## License
 
-This project is currently unlicensed.
+This project is licensed under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) license. See the [LICENSE](LICENSE) file for details.
