@@ -17,6 +17,7 @@ uniform float uNoise;
 uniform float uScan;
 uniform float uScanFreq;
 uniform float uWarp;
+uniform vec2 uOffset;
 #define iTime uTime
 #define iResolution uResolution
 
@@ -59,6 +60,7 @@ vec4 cppn_fn(vec2 coordinate,float in0,float in1,float in2){
 void mainImage(out vec4 fragColor,in vec2 fragCoord){
     vec2 uv=fragCoord/uResolution.xy*2.-1.;
     uv.y*=-1.;
+    uv+=uOffset;
     uv+=uWarp*vec2(sin(uv.y*6.283+uTime*0.5),cos(uv.x*6.283+uTime*0.5))*0.05;
     fragColor=cppn_fn(uv,0.1*sin(0.3*uTime),0.1*sin(0.69*uTime),0.1*sin(0.44*uTime));
 }
@@ -81,6 +83,8 @@ type Props = {
   scanlineFrequency?: number;
   warpAmount?: number;
   resolutionScale?: number;
+  paused?: boolean;
+  offset?: { x: number; y: number };
 };
 
 export default function DarkVeil({
@@ -91,14 +95,22 @@ export default function DarkVeil({
   scanlineFrequency = 0,
   warpAmount = 0,
   resolutionScale = 1,
+  paused = false,
+  offset = { x: 0, y: 0 },
 }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const pausedRef = useRef<boolean>(paused);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+
   useEffect(() => {
     const canvas = ref.current as HTMLCanvasElement;
     const parent = canvas.parentElement as HTMLElement;
 
     const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio, 2),
+      dpr: 1, // Force 1.0 DPR for performance
       canvas,
     });
 
@@ -116,6 +128,7 @@ export default function DarkVeil({
         uScan: { value: scanlineIntensity },
         uScanFreq: { value: scanlineFrequency },
         uWarp: { value: warpAmount },
+        uOffset: { value: new Vec2(0, 0) },
       },
     });
 
@@ -135,6 +148,9 @@ export default function DarkVeil({
     let frame = 0;
 
     const loop = () => {
+      frame = requestAnimationFrame(loop);
+      if (pausedRef.current) return;
+
       program.uniforms.uTime.value =
         ((performance.now() - start) / 1000) * speed;
       program.uniforms.uHueShift.value = hueShift;
@@ -142,8 +158,8 @@ export default function DarkVeil({
       program.uniforms.uScan.value = scanlineIntensity;
       program.uniforms.uScanFreq.value = scanlineFrequency;
       program.uniforms.uWarp.value = warpAmount;
+      program.uniforms.uOffset.value.set(offset.x, offset.y);
       renderer.render({ scene: mesh });
-      frame = requestAnimationFrame(loop);
     };
 
     loop();
